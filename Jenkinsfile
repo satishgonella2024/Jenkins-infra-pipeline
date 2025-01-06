@@ -41,10 +41,10 @@ pipeline {
             }
             steps {
                 dir('terraform/tests') {
-                       sh '''
+                    sh '''
                         go mod tidy
                         go test -v
-                      '''
+                    '''
                 }
             }
         }
