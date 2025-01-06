@@ -85,8 +85,7 @@ pipeline {
                 dir('terraform') {
                     echo 'Calculating cost estimates using Infracost...'
                     sh '''
-                        # export INFRACOST_API_KEY=${INFRACOST_API_KEY}
-                        echo $INFRACOST_API_KEY
+                        export INFRACOST_API_KEY=${INFRACOST_API_KEY}
                         infracost breakdown --path=. --format=json --out-file=infracost.json
                         infracost output --path=infracost.json --format=table
                     '''
@@ -131,7 +130,13 @@ pipeline {
                 dir('terraform') {
                     echo 'Generating HTML report with cost visualization...'
                     sh '''
-                        infracost diff --path=. --format=json --out-file=infracost-diff.json
+                        # Generate baseline cost file
+                        infracost breakdown --path=. --format=json --out-file=infracost-base.json
+                        
+                        # Generate cost diff
+                        infracost diff --path=. --compare-to=infracost-base.json --format=json --out-file=infracost-diff.json
+                        
+                        # Generate HTML report
                         infracost output --path=infracost-diff.json --format=html --out-file=infracost-report.html
                     '''
                 }
