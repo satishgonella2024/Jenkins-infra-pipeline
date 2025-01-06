@@ -3,7 +3,7 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = credentials('aws-credentials')
         AWS_SECRET_ACCESS_KEY = credentials('aws-credentials')
-        INFRACOST_API_KEY = credentials('infracost-api-key')
+        INFRACOST_API_KEY = credentials('INFRACOST_API_KEY')
         PATH = "/usr/local/bin:$PATH"
     }
     stages {
