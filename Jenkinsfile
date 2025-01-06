@@ -131,7 +131,6 @@ pipeline {
                 dir('terraform') {
                     echo 'Generating HTML report with cost visualization...'
                     sh '''
-                        export INFRACOST_API_KEY=${INFRACOST_API_KEY}
                         infracost diff --path=. --format=json --out-file=infracost-diff.json
                         infracost output --path=infracost-diff.json --format=html --out-file=infracost-report.html
                     '''
