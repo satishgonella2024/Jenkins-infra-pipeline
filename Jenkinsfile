@@ -34,6 +34,16 @@ pipeline {
                 }
             }
         }
+        stage('Terratest') {
+            when {
+                expression { env.TF_ACTION == 'apply' }
+            }
+            steps {
+                dir('terraform/tests') {
+                    sh 'go test -v'
+                }
+            }
+        }
         stage('Terraform Plan') {
             steps {
                 dir('terraform') {
@@ -44,16 +54,6 @@ pipeline {
                             sh 'terraform plan -destroy -out=tfplan'
                         }
                     }
-                }
-            }
-        }
-        stage('Terratest') {
-            when {
-                expression { env.TF_ACTION == 'apply' }
-            }
-            steps {
-                dir('terraform/tests') {
-                    sh 'go test -v'
                 }
             }
         }
