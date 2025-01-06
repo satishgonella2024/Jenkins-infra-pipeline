@@ -1,26 +1,21 @@
 resource "aws_s3_bucket" "example" {
   bucket = "jenkins-infra-pipeline-example-london"
+
+  tags = {
+    Name        = "Jenkins Infra Pipeline Example"
+    Environment = "Test"
+  }
+}
+
+resource "aws_s3_bucket_acl" "example_acl" {
+  bucket = aws_s3_bucket.example.id
+  acl    = "private"
 }
 
 resource "aws_s3_bucket_public_access_block" "example" {
   bucket                  = aws_s3_bucket.example.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-resource "aws_s3_bucket_policy" "example_policy" {
-  bucket = aws_s3_bucket.example.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.example.arn}/*"
-      }
-    ]
-  })
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
