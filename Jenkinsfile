@@ -121,8 +121,8 @@ pipeline {
         failure {
             echo "Terraform ${env.TF_ACTION} failed. Check logs for details."
         }
-        always {
-            cleanWs(cleanWhenNotBuilt: false, patterns: [[pattern: 'terraform/*.tfstate', type: 'EXCLUDE']])
-        }
+        // always {
+        //     cleanWs(cleanWhenNotBuilt: false, patterns: [[pattern: 'terraform/*.tfstate', type: 'EXCLUDE']])
+        // }
     }
 }
