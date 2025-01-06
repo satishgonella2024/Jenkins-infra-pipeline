@@ -61,6 +61,16 @@ pipeline {
                 }
             }
         }
+        stage('Terratest') {
+            when {
+                expression { env.TF_ACTION == 'apply' }
+            }
+            steps {
+                dir('terraform/tests') {
+                    sh 'go test -v'
+                }
+            }
+        }
     }
     post {
         success {
