@@ -24,20 +24,50 @@ pipeline {
                 }
             }
         }
-        stage('Terraform Plan') {
+        stage('Select Action') {
             steps {
-                dir('terraform') {
-                    sh 'terraform plan -out=tfplan'
+                script {
+                    env.TF_ACTION = input(
+                        id: 'ActionChoice', message: 'Select Terraform Action:',
+                        parameters: [choice(name: 'ACTION', choices: 'apply\ndestroy', description: 'Choose whether to apply or destroy infrastructure')]
+                    )
                 }
             }
         }
-        stage('Terraform Apply') {
+        stage('Terraform Plan') {
             steps {
-                input message: 'Apply Terraform changes?', ok: 'Apply'
                 dir('terraform') {
-                    sh 'terraform apply -auto-approve tfplan'
+                    script {
+                        if (env.TF_ACTION == 'apply') {
+                            sh 'terraform plan -out=tfplan'
+                        } else {
+                            sh 'terraform plan -destroy -out=tfplan'
+                        }
+                    }
                 }
             }
+        }
+        stage('Terraform Apply/Destroy') {
+            steps {
+                input message: "Proceed with Terraform ${env.TF_ACTION}?", ok: "Continue"
+                dir('terraform') {
+                    script {
+                        if (env.TF_ACTION == 'apply') {
+                            sh 'terraform apply -auto-approve tfplan'
+                        } else {
+                            sh 'terraform apply -destroy -auto-approve tfplan'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo "Terraform ${env.TF_ACTION} completed successfully."
+        }
+        failure {
+            echo "Terraform ${env.TF_ACTION} failed. Check logs for details."
         }
     }
 }
