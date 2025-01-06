@@ -1,11 +1,23 @@
 pipeline {
     agent any
     environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-credentials')  // AWS credentials
-        AWS_SECRET_ACCESS_KEY = credentials('aws-credentials') // AWS credentials
-        INFRACOST_API_KEY = credentials('infracost-api-key') // Infracost API key
+        AWS_ACCESS_KEY_ID = credentials('aws-credentials')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-credentials')
+        INFRACOST_API_KEY = credentials('infracost-api-key')
+        PATH = "/usr/local/bin:$PATH"
     }
     stages {
+        stage('Debug Environment') {
+            steps {
+                sh '''
+                    echo "PATH: $PATH"
+                    echo "Terraform location: $(which terraform)"
+                    echo "Infracost location: $(which infracost)"
+                    echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+                    echo "INFRACOST_API_KEY: $INFRACOST_API_KEY"
+                '''
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout scm
@@ -14,7 +26,11 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir('terraform') {
-                    sh 'terraform init'
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        terraform init
+                    '''
                 }
             }
         }
@@ -69,6 +85,7 @@ pipeline {
                 dir('terraform') {
                     echo 'Calculating cost estimates using Infracost...'
                     sh '''
+                        export INFRACOST_API_KEY=${INFRACOST_API_KEY}
                         infracost breakdown --path=. --format=json --out-file=infracost.json
                         infracost output --path=infracost.json --format=table
                     '''
@@ -82,7 +99,11 @@ pipeline {
             steps {
                 input message: "Proceed with Terraform ${env.TF_ACTION}?", ok: "Continue"
                 dir('terraform') {
-                    sh 'terraform apply -auto-approve tfplan'
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        terraform apply -auto-approve tfplan
+                    '''
                 }
             }
         }
@@ -93,7 +114,11 @@ pipeline {
             steps {
                 input message: "Proceed with Terraform destroy?", ok: "Continue"
                 dir('terraform') {
-                    sh 'terraform apply -destroy -auto-approve tfplan'
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        terraform apply -destroy -auto-approve tfplan
+                    '''
                 }
             }
         }
@@ -105,6 +130,7 @@ pipeline {
                 dir('terraform') {
                     echo 'Generating HTML report with cost visualization...'
                     sh '''
+                        export INFRACOST_API_KEY=${INFRACOST_API_KEY}
                         infracost diff --path=. --format=json --out-file=infracost-diff.json
                         infracost output --path=infracost-diff.json --format=html --out-file=infracost-report.html
                     '''
@@ -121,8 +147,5 @@ pipeline {
         failure {
             echo "Terraform ${env.TF_ACTION} failed. Check logs for details."
         }
-        // always {
-        //     cleanWs(cleanWhenNotBuilt: false, patterns: [[pattern: 'terraform/*.tfstate', type: 'EXCLUDE']])
-        // }
     }
 }
