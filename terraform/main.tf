@@ -7,11 +7,6 @@ resource "aws_s3_bucket" "example" {
   }
 }
 
-resource "aws_s3_bucket_acl" "example_acl" {
-  bucket = aws_s3_bucket.example.id
-  acl    = "private"
-}
-
 resource "aws_s3_bucket_public_access_block" "example" {
   bucket                  = aws_s3_bucket.example.id
   block_public_acls       = true
