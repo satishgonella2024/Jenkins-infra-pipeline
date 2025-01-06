@@ -85,7 +85,8 @@ pipeline {
                 dir('terraform') {
                     echo 'Calculating cost estimates using Infracost...'
                     sh '''
-                        export INFRACOST_API_KEY=${INFRACOST_API_KEY}
+                        // export INFRACOST_API_KEY=${INFRACOST_API_KEY}
+                        echo $INFRACOST_API_KEY
                         infracost breakdown --path=. --format=json --out-file=infracost.json
                         infracost output --path=infracost.json --format=table
                     '''
