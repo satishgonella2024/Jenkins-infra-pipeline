@@ -1,8 +1,9 @@
 pipeline {
     agent any
     environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-credentials')  // Replace with your Jenkins credential ID
-        AWS_SECRET_ACCESS_KEY = credentials('aws-credentials') // Replace with your Jenkins credential ID
+        AWS_ACCESS_KEY_ID = credentials('aws-credentials')  // AWS credentials
+        AWS_SECRET_ACCESS_KEY = credentials('aws-credentials') // AWS credentials
+        INFRACOST_API_KEY = credentials('infracost-api-key') // Infracost API key
     }
     stages {
         stage('Checkout') {
@@ -57,6 +58,20 @@ pipeline {
                 }
             }
         }
+        stage('Infracost Estimate') {
+            when {
+                expression { env.TF_ACTION == 'apply' }
+            }
+            steps {
+                dir('terraform') {
+                    echo 'Calculating cost estimates using Infracost...'
+                    sh '''
+                        infracost breakdown --path=. --format=json --out-file=infracost.json
+                        infracost output --path=infracost.json --format=table
+                    '''
+                }
+            }
+        }
         stage('Terraform Apply') {
             when {
                 expression { env.TF_ACTION == 'apply' }
@@ -79,6 +94,22 @@ pipeline {
                 }
             }
         }
+        stage('Visualize Infracost Report') {
+            when {
+                expression { env.TF_ACTION == 'apply' }
+            }
+            steps {
+                dir('terraform') {
+                    echo 'Generating HTML report with cost visualization...'
+                    sh '''
+                        infracost diff --path=. --format=json --out-file=infracost-diff.json
+                        infracost output --path=infracost-diff.json --format=html --out-file=infracost-report.html
+                    '''
+                }
+                archiveArtifacts artifacts: 'terraform/infracost-report.html', allowEmptyArchive: false
+                echo "Infracost report has been archived. Review the HTML file for detailed cost breakdown."
+            }
+        }
     }
     post {
         success {
@@ -86,6 +117,9 @@ pipeline {
         }
         failure {
             echo "Terraform ${env.TF_ACTION} failed. Check logs for details."
+        }
+        always {
+            cleanWs()
         }
     }
 }
