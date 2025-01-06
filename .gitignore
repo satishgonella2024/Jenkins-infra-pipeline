@@ -1,0 +1,7 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Ignore Terraform plan files
+tfplan
