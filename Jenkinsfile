@@ -47,20 +47,6 @@ pipeline {
                 }
             }
         }
-        stage('Terraform Apply/Destroy') {
-            steps {
-                input message: "Proceed with Terraform ${env.TF_ACTION}?", ok: "Continue"
-                dir('terraform') {
-                    script {
-                        if (env.TF_ACTION == 'apply') {
-                            sh 'terraform apply -auto-approve tfplan'
-                        } else {
-                            sh 'terraform apply -destroy -auto-approve tfplan'
-                        }
-                    }
-                }
-            }
-        }
         stage('Terratest') {
             when {
                 expression { env.TF_ACTION == 'apply' }
@@ -68,6 +54,28 @@ pipeline {
             steps {
                 dir('terraform/tests') {
                     sh 'go test -v'
+                }
+            }
+        }
+        stage('Terraform Apply') {
+            when {
+                expression { env.TF_ACTION == 'apply' }
+            }
+            steps {
+                input message: "Proceed with Terraform ${env.TF_ACTION}?", ok: "Continue"
+                dir('terraform') {
+                    sh 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+        stage('Terraform Destroy') {
+            when {
+                expression { env.TF_ACTION == 'destroy' }
+            }
+            steps {
+                input message: "Proceed with Terraform destroy?", ok: "Continue"
+                dir('terraform') {
+                    sh 'terraform apply -destroy -auto-approve tfplan'
                 }
             }
         }
